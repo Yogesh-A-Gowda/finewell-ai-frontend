@@ -1,11 +1,11 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { LayoutDashboard, ArrowLeftRight, Bell, MessageCircle, LogOut, TrendingUp } from 'lucide-react'
+import { LayoutDashboard, ArrowLeftRight, Bell, MessageCircle, LogOut, TrendingUp, Menu, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { getAlerts } from '../services/api'
 
 const nav = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
   { to: '/alerts', label: 'Alerts', icon: Bell },
   { to: '/chat', label: 'AI Advisor', icon: MessageCircle },
@@ -15,6 +15,7 @@ export default function Layout() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const [unread, setUnread] = useState(0)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     getAlerts(true).then((r) => setUnread(r.data.length)).catch(() => {})
@@ -24,73 +25,129 @@ export default function Layout() {
     return () => clearInterval(interval)
   }, [])
 
+  // Close sidebar when navigating on mobile
+  const handleNavClick = () => setSidebarOpen(false)
+
   const handleSignOut = () => { signOut(); navigate('/login') }
+
+  const SidebarContent = () => (
+    <>
+      <div className="p-5 border-b border-blue-700">
+        <div className="flex items-center gap-3">
+          <div className="bg-blue-500 rounded-xl p-2">
+            <TrendingUp size={20} className="text-white" />
+          </div>
+          <div>
+            <h1 className="font-bold text-base leading-tight">FinWell AI</h1>
+            <p className="text-blue-300 text-xs">Financial Wellness</p>
+          </div>
+        </div>
+      </div>
+
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        {nav.map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={to === '/'}
+            onClick={handleNavClick}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                isActive
+                  ? 'bg-white/20 text-white shadow-sm'
+                  : 'text-blue-200 hover:bg-white/10 hover:text-white'
+              }`
+            }
+          >
+            <Icon size={18} />
+            <span>{label}</span>
+            {label === 'Alerts' && unread > 0 && (
+              <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {unread > 9 ? '9+' : unread}
+              </span>
+            )}
+          </NavLink>
+        ))}
+      </nav>
+
+      <div className="p-4 border-t border-blue-700">
+        <div className="flex items-center gap-3 mb-3 px-2">
+          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-sm font-bold shrink-0">
+            {user?.name?.[0]?.toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{user?.name}</p>
+            <p className="text-xs text-blue-300 truncate">{user?.email}</p>
+          </div>
+        </div>
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-2 text-blue-300 hover:text-white text-sm px-2 py-1.5 rounded-lg hover:bg-white/10 transition-colors w-full"
+        >
+          <LogOut size={16} />
+          Sign out
+        </button>
+      </div>
+    </>
+  )
 
   return (
     <div className="min-h-screen flex bg-gray-50">
-      {/* Sidebar */}
-      <aside className="w-64 bg-gradient-to-b from-blue-900 to-blue-800 text-white flex flex-col shadow-xl">
-        <div className="p-6 border-b border-blue-700">
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-500 rounded-xl p-2">
-              <TrendingUp size={22} className="text-white" />
-            </div>
-            <div>
-              <h1 className="font-bold text-lg leading-tight">FinWell AI</h1>
-              <p className="text-blue-300 text-xs">Financial Wellness</p>
-            </div>
-          </div>
-        </div>
 
-        <nav className="flex-1 p-4 space-y-1">
-          {nav.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                  isActive
-                    ? 'bg-white/20 text-white shadow-sm'
-                    : 'text-blue-200 hover:bg-white/10 hover:text-white'
-                }`
-              }
-            >
-              <Icon size={18} />
-              <span>{label}</span>
-              {label === 'Alerts' && unread > 0 && (
-                <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                  {unread > 9 ? '9+' : unread}
-                </span>
-              )}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="p-4 border-t border-blue-700">
-          <div className="flex items-center gap-3 mb-3 px-2">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-sm font-bold">
-              {user?.name?.[0]?.toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.name}</p>
-              <p className="text-xs text-blue-300 truncate">{user?.email}</p>
-            </div>
-          </div>
-          <button
-            onClick={handleSignOut}
-            className="flex items-center gap-2 text-blue-300 hover:text-white text-sm px-2 py-1.5 rounded-lg hover:bg-white/10 transition-colors w-full"
-          >
-            <LogOut size={16} />
-            Sign out
-          </button>
-        </div>
+      {/* ── Desktop sidebar (always visible ≥ lg) ── */}
+      <aside className="hidden lg:flex w-64 bg-gradient-to-b from-blue-900 to-blue-800 text-white flex-col shadow-xl shrink-0">
+        <SidebarContent />
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 overflow-auto">
-        <Outlet />
-      </main>
+      {/* ── Mobile sidebar drawer ── */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      <aside
+        className={`fixed top-0 left-0 h-full w-64 z-50 bg-gradient-to-b from-blue-900 to-blue-800 text-white flex flex-col shadow-xl transition-transform duration-300 lg:hidden ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="absolute top-4 right-4 text-blue-300 hover:text-white"
+        >
+          <X size={20} />
+        </button>
+        <SidebarContent />
+      </aside>
+
+      {/* ── Main content ── */}
+      <div className="flex-1 flex flex-col min-w-0">
+
+        {/* Mobile top bar */}
+        <header className="lg:hidden bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 sticky top-0 z-30 shadow-sm">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Menu size={22} />
+          </button>
+          <div className="flex items-center gap-2">
+            <div className="bg-blue-600 rounded-lg p-1.5">
+              <TrendingUp size={16} className="text-white" />
+            </div>
+            <span className="font-bold text-gray-900 text-sm">FinWell AI</span>
+          </div>
+          {unread > 0 && (
+            <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              {unread > 9 ? '9+' : unread}
+            </span>
+          )}
+        </header>
+
+        <main className="flex-1 overflow-auto">
+          <Outlet />
+        </main>
+      </div>
     </div>
   )
 }
